@@ -15,21 +15,20 @@ L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
 }).addTo(myMap);
 
 // CHANGE TO CHANGE DATA SET
-// var start_date = '2021-03-01';
-// var end_date = '2021-03-10';
-// var url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start_date}&endtime=${end_date}`;
+var start_date = '2021-03-14';
+var end_date = '2021-03-26';
+var url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start_date}&endtime=${end_date}`;
+
+
 
 function plotPoints(resp) {
-  var radius_scale_factor = 10000;
-
-  // console.log(resp.features);
 
   // Points
   resp.features.forEach(feat => {
+    var radius_scale_factor = 10000;
     var quake_location = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
     var pt_color = d3.interpolateRgb('white', 'purple')(feat.geometry.coordinates[2] / 10);
 
-    // console.log(quake_location);
     L.circle(quake_location, {
       color: pt_color,
       fillColor: pt_color,
@@ -48,37 +47,36 @@ function plotPoints(resp) {
       key => ({ [key]: t_resp.map( o => o[key] ) })
   ));
 
-  var depths = coords.coordinates.map(c => c[2]).sort(((x,y) => x - y));
-  var step = Math.abs(depths[depths.length - 1] - depths[0]) / 5;
-  var depth_intervals = [];
+  // var depths = coords.coordinates.map(c => c[2]).sort(((x,y) => x - y));
+  // var step = Math.abs(depths[depths.length - 1] - depths[0]) / 5;
+  // var depth_intervals = [];
 
-  for (i = depths[0]; i < depths[depths.length -1]; i += step) {
-    depth_intervals.push(i);
-  };
+  // for (i = depths[0]; i < depths[depths.length -1]; i += step) {
+  //   depth_intervals.push(i);
+  // };
 
-  console.log(step);
-  console.log(depths)
+  // console.log(depth_intervals);
 
   // Legend 
   var legend = L.control({position: 'bottomright'});
 
-legend.onAdd = function (map) {
+  legend.onAdd = function (map) {
 
-    var div = L.DomUtil.create('div', 'info legend');
-        // grades = [0, 10, 20, 50, 100, 200, 500, 1000],
-        // labels = [];
-    
-    // loop through our density intervals and generate a label with a colored square for each interval
-    for (var i = 0; i < depth_intervals.length; i++) {
-        div.innerHTML +=
-            '<i style="background:' + d3.interpolateRgb('white', 'purple')(depth_intervals[i] + 1) + '"></i> ' +
-            depth_intervals[i] + (depth_intervals[i + 1] ? '&ndash;' + depth_intervals[i + 1] + '<br>' : '+');
-    }
+  var div = L.DomUtil.create('div', 'info legend');
 
-    return div;
+  var depth_intervals = [-10, 10, 30, 50, 70, 90];
+  
+  for (var i = 0; i < depth_intervals.length; i++) {
+    div.innerHTML +=
+      '<i style="background:' + d3.interpolateRgb('white', 'purple')(depth_intervals[i] / 10) + '"></i> ' +
+      depth_intervals[i] + (depth_intervals[i + 1] ? '&ndash;' + depth_intervals[i + 1] + '<br>' : '+');
 };
 
-legend.addTo(myMap);
+  return div;
+};
+
+legend.addTo(myMap)
+;
 
 
 
@@ -86,6 +84,7 @@ legend.addTo(myMap);
 };
 
 // console.log(url);
-var link = 'data/march2021_earthquakes.geojson'; 
+// var link = 'data/march2021_earthquakes.geojson'; 
+// var link =
 
-d3.json(link, plotPoints);
+d3.json(url, plotPoints);
