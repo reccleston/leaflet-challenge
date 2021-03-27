@@ -20,9 +20,11 @@ L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
 // var url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start_date}&endtime=${end_date}`;
 
 function plotPoints(resp) {
-  console.log(resp.features);
-
   var radius_scale_factor = 10000;
+
+  // console.log(resp.features);
+
+  // Points
   resp.features.forEach(feat => {
     var quake_location = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
     var pt_color = d3.interpolateRgb('white', 'purple')(feat.geometry.coordinates[2] / 10);
@@ -33,9 +35,56 @@ function plotPoints(resp) {
       fillColor: pt_color,
       fillOpacity: 0.5,
       radius: radius_scale_factor * feat.properties.mag
-    }).addTo(myMap);
+    }).bindPopup(`An earthquake of magnitude ${feat.properties.mag} and depth of ${feat.geometry.coordinates[2]} occured ${feat.properties.place}`).addTo(myMap);
   });
+
+  const t_resp = Object.assign(...Array.from(
+    new Set(resp.features.reduce((keys, o) => keys.concat(Object.keys(o)), [] )),
+    key => ({ [key]: resp.features.map( o => o[key] ) })
+    )).geometry;
+  
+    const coords = Object.assign(...Array.from(
+      new Set(t_resp.reduce((keys, o) => keys.concat(Object.keys(o)), [] )),
+      key => ({ [key]: t_resp.map( o => o[key] ) })
+  ));
+
+  var depths = coords.coordinates.map(c => c[2]).sort(((x,y) => x - y));
+  var step = Math.abs(depths[depths.length - 1] - depths[0]) / 5;
+  var depth_intervals = [];
+
+  for (i = depths[0]; i < depths[depths.length -1]; i += step) {
+    depth_intervals.push(i);
+  };
+
+  console.log(step);
+  console.log(depths)
+
+  // Legend 
+  var legend = L.control({position: 'bottomright'});
+
+legend.onAdd = function (map) {
+
+    var div = L.DomUtil.create('div', 'info legend');
+        // grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+        // labels = [];
+    
+    // loop through our density intervals and generate a label with a colored square for each interval
+    for (var i = 0; i < depth_intervals.length; i++) {
+        div.innerHTML +=
+            '<i style="background:' + d3.interpolateRgb('white', 'purple')(depth_intervals[i] + 1) + '"></i> ' +
+            depth_intervals[i] + (depth_intervals[i + 1] ? '&ndash;' + depth_intervals[i + 1] + '<br>' : '+');
+    }
+
+    return div;
 };
+
+legend.addTo(myMap);
+
+
+
+
+};
+
 // console.log(url);
 var link = 'data/march2021_earthquakes.geojson'; 
 
